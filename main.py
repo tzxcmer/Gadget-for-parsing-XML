@@ -25,8 +25,8 @@ def check_file(file, required_patterns, excluded_patterns):
     return True
 
 # 
-required_patterns = ['/BSW/']
-excluded_patterns = ['/BSW/gPtp/']
+required_patterns = []
+excluded_patterns = []
 
 # 在给定文件中添加根元素。
 #
@@ -96,7 +96,7 @@ pattern_names = {"COMF":0,"PATH":0,"GOTO":0,"CCM":0,"CALLING":0,"CALLS":0,
                  "PARAM":0,"STMT":0,"LEVEL":0,"RETURN":0,"VOCF":0,"CYCLE":0}
 
 # 文件路径
-folder_name = "MRTOS result"
+folder_name = "result"
 
 for pattern_name in pattern_names.keys():
     sourname = '%s\\HIS_%s.errors.xml' % (folder_name, pattern_name)
@@ -131,13 +131,22 @@ print(pattern_names)
 sum = 0
 
 # 计算总函数数量。
-with open('In+Latest_MRTOS_ALL_functions.csv') as f:
-    reader = csv.reader(f)
-    for row in reader:
-        Function, File,*_ = row
-        if check_file(File, required_patterns, excluded_patterns):
-            sum = sum + 1
+# with open('In+Latest_MRTOS_ALL_functions.csv') as f:
+#     reader = csv.reader(f)
+#     for row in reader:
+#         Function, File,*_ = row
+#         if check_file(File, required_patterns, excluded_patterns):
+#             sum = sum + 1
 
+try:
+    with open('In+Latest_MRTOS_ALL_functions.csv') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            Function, File,*_ = row
+            if check_file(File, required_patterns, excluded_patterns):
+                sum = sum + 1
+except FileNotFoundError:
+    print("File not found.")
 
 print("The TOTAL_FUNCS is {}".format(sum))
 
@@ -149,7 +158,13 @@ Coefficients = {"COMF":0.045,"PATH":0.090,"GOTO":0.090,"CCM":0.090,
                "LEVEL":0.090,"RETURN":0.090,"VOCF":0.045,"CYCLE":0.130}
 
 # 计算最终结果
+# for key,value in Coefficients.items():
+#     ans = ans + (pattern_names[key]/sum) * value
 for key,value in Coefficients.items():
-    ans = ans + (pattern_names[key]/sum) * value
-    
+    if sum == 0:
+        print("Warning: Division by zero") 
+        break
+    else:
+        ans = ans + (pattern_names[key]/sum) * value    
+
 print("The ans is {:.2f}%".format(ans*100))
