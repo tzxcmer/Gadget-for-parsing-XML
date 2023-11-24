@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 import csv
 import os
 import re
-
+from bs4 import BeautifulSoup
 
 # 检查给定文件是否在自研代码目录下。
 #
@@ -14,7 +14,7 @@ import re
 # excluded_patterns：排除的目录列表。
 #
 # 返回值：
-# 如果文件包含所有必需模式并且不包含任何排除模式，则返回True；否则返回False。
+# 如果文件包含所有必需目录并且不包含任何排除目录，则返回True；否则返回False。
 def check_file(file, required_patterns, excluded_patterns):
     for pattern in required_patterns:
         if pattern not in file:
@@ -24,9 +24,18 @@ def check_file(file, required_patterns, excluded_patterns):
             return False
     return True
 
-# 
-required_patterns = []
-excluded_patterns = []
+# 你需要修改以下代码
+#v1
+required_patterns = ['/BSW/']
+excluded_patterns = ['/BSW/gPtp/']
+folder_name = "MRTOS result"  # 文件路径
+function_name = 'In+Latest_MRTOS_ALL_functions.csv'# 指定所有函数列表文件路径
+
+
+# #v2
+# required_patterns = []
+# excluded_patterns = []
+# folder_name = "result"  # 文件路径
 
 # 在给定文件中添加根元素。
 #
@@ -95,8 +104,6 @@ def parse_xml(xml_file,pattern_name):
 pattern_names = {"COMF":0,"PATH":0,"GOTO":0,"CCM":0,"CALLING":0,"CALLS":0,
                  "PARAM":0,"STMT":0,"LEVEL":0,"RETURN":0,"VOCF":0,"CYCLE":0}
 
-# 文件路径
-folder_name = "result"
 
 for pattern_name in pattern_names.keys():
     sourname = '%s\\HIS_%s.errors.xml' % (folder_name, pattern_name)
@@ -138,15 +145,23 @@ sum = 0
 #         if check_file(File, required_patterns, excluded_patterns):
 #             sum = sum + 1
 
-try:
-    with open('In+Latest_MRTOS_ALL_functions.csv') as f:
+html_name = '%s\\HIS_report.html' % folder_name
+
+if os.path.isfile(function_name):
+    with open(function_name) as f:
         reader = csv.reader(f)
         for row in reader:
-            Function, File,*_ = row
+            Function, File, *_ = row
             if check_file(File, required_patterns, excluded_patterns):
                 sum = sum + 1
-except FileNotFoundError:
-    print("File not found.")
+else:
+    print("In+Latest_ALL_functions.csv is not found. Get total number of functions from HIS_report.html")
+    with open(html_name, 'r') as f:
+        contents = f.read()
+    soup = BeautifulSoup(contents, 'lxml')
+    element = soup.find('td', string='Overall amount of functions')
+    value_element = element.find_next('td')
+    sum = int(value_element.text.strip())
 
 print("The TOTAL_FUNCS is {}".format(sum))
 
@@ -167,4 +182,4 @@ for key,value in Coefficients.items():
     else:
         ans = ans + (pattern_names[key]/sum) * value    
 
-print("The ans is {:.2f}%".format(ans*100))
+print("The HIS score {:.2f}%".format(ans*100))
